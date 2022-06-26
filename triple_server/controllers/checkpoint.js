@@ -1,4 +1,4 @@
-function getUserPoint (res, req){
+function getUserPoint (req, res){
     res.json("getUserPoint")
 }
 

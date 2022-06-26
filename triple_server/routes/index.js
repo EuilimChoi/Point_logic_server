@@ -9,8 +9,8 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/events',function(req, res, next) {
-    postEvents(req, res)
-  });
+  postEvents(req, res)
+});
   
 router.get('/getuserpoint', function(req, res, next){
   getUserPoint(req, res)
