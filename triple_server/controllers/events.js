@@ -1,4 +1,5 @@
 const db = require("../database/config")
+const pointLogger = require("../config/logger.point")
 
 const postEvents = async(req, res) =>{
     const action = req.body.action
@@ -21,10 +22,12 @@ const postEvents = async(req, res) =>{
 }
 
 const addReview = async(reviewInfo) => {
-    let userId = reviewInfo.userId
-    let placeId = reviewInfo.placeId
-    let content = reviewInfo.content
-    let reviewId = reviewInfo.reviewId
+    let {userId,placeId,content,reviewId,action} = reviewInfo
+    // let userId = reviewInfo.userId
+    // let placeId = reviewInfo.placeId
+    // let content = reviewInfo.content
+    // let reviewId = reviewInfo.reviewId
+    // let action = reviewInfo.action
     let attachedPhotoIds =  JSON.stringify(reviewInfo.attachedPhotoIds)
     
     if (await isAlreadyReviewed(userId, placeId) === false) {
@@ -34,7 +37,7 @@ const addReview = async(reviewInfo) => {
             VALUES ("${reviewId}","${content}", "${userId}","${placeId}",'${attachedPhotoIds}', ${givenPoint})`
         )
         await plusOrMinusPoint(userId,givenPoint)
-        
+        await pointLogger(userId,reviewId,givenPoint,action)
         return "리뷰 작성 완료!"
 
     }else {
@@ -47,29 +50,34 @@ const modReview = async(reviewInfo) => {
     let placeId = reviewInfo.placeId
     let content = reviewInfo.content
     let reviewId = reviewInfo.reviewId
+    let action = reviewInfo.action
     let attachedPhotoIds =  JSON.stringify(reviewInfo.attachedPhotoIds)
 
     const [reviewRows,userfields] = await db.execute(
         `SELECT * from review
         where reviewId = '${reviewId}'`,
-        )
-        let currentReviewPoint = reviewRows[0].givenPoint
-        let givenPointAfterMod = await pointCount(reviewInfo)
-        let PointDiff = givenPointAfterMod-currentReviewPoint
-        console.log(currentReviewPoint, givenPointAfterMod, PointDiff)
+    )
+    
+    let currentReviewPoint = reviewRows[0].givenPoint
+    let givenPointAfterMod = await pointCount(reviewInfo)
+    let PointDiff = givenPointAfterMod-currentReviewPoint
 
     if(reviewRows.length > 0){
+        await db.execute(
+            `UPDATE review 
+            SET content = '${content}', attachedPhotoIds='${attachedPhotoIds}',givenPoint=${givenPointAfterMod}
+            WHERE reviewId = '${reviewId}'`
+        )
 
-    await db.execute(
-        `UPDATE review 
-        SET content = '${content}', attachedPhotoIds='${attachedPhotoIds}',givenPoint=${givenPointAfterMod}
-        WHERE reviewId = '${reviewId}'`
-    )
+        await isFristReviewInplace(placeId)
+        await plusOrMinusPoint(userId,PointDiff)
 
-    await isFristReviewInplace(placeId)
-    await plusOrMinusPoint(userId,PointDiff)
-    
-    return `리뷰 수정 완료 완료!`
+        if (PointDiff != 0){
+            await pointLogger(userId,reviewId,PointDiff,action,reviewRows[0])
+        }
+
+        return `리뷰 수정 완료 완료!`
+
     }else{
         return `해당 리뷰가 존재하지 않습니다!`
     }
@@ -89,7 +97,10 @@ const deleteReview = async(reviewInfo) => {
             `DELETE FROM review WHERE reviewId = "${reviewId}"`,
             )
         await plusOrMinusPoint(userId, -(givenPoint))
+        await pointLogger(userId,reviewId, -givenPoint,"DELETE",reviewInfo)
+
         return `리뷰가 삭제되었습니다. 포인트 회수 ${-(givenPoint)}`
+
     }else{
         return `해당 리뷰가 존재하지 않습니다!`
     }
@@ -125,12 +136,10 @@ const isFristReviewInplace = async (reviewId,placeId) => {
 const addPointRule = (rule) => {
     switch (rule){
         case "isFristReviewInplace" : 
-            return 2;
-        case "isNotFristReviewInplace" : 
             return 1;
         case "isPhoto" :
             return 1;
-        case "addPhotoFromNoPhoto" :
+        case "isWord" : 
             return 1;
         case "noPoint" :
             return 0
@@ -151,19 +160,23 @@ const plusOrMinusPoint = async(userId,givenpoint) => {
 
 const pointCount = async (reviewInfo) =>{
     let placeId = reviewInfo.placeId
+    let lengthOfReview = reviewInfo.content.length
     let numOfPhoto = reviewInfo.attachedPhotoIds.length
     let totalPointInThisReview = 0
 
     await isFristReviewInplace(placeId) ?
         totalPointInThisReview += addPointRule("isFristReviewInplace") : 
-        totalPointInThisReview += addPointRule("isNotFristReviewInplace")
+        totalPointInThisReview += addPointRule("noPoint")
 
     numOfPhoto > 0 ? 
         totalPointInThisReview += addPointRule("isPhoto") : 
         totalPointInThisReview += addPointRule("noPoint" )
 
+    lengthOfReview > 0 ?
+        totalPointInThisReview += addPointRule("isWord") : 
+        totalPointInThisReview += addPointRule("noPoint" )
+        
     return totalPointInThisReview
 }
 
-
-module.exports = postEvents
+module.exports = postEvents, pointCount;

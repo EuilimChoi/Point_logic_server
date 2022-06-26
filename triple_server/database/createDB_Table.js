@@ -26,6 +26,17 @@ const createDB = async () => {
         )`,
         )
 
+    await db.query(`CREATE TABLE if not exists pointLog (
+        id int NOT NULL AUTO_INCREMENT  PRIMARY KEY,
+        userId varchar(255),
+        reviewId varchar(255),
+        pointChange int,
+        pointNow int,
+        changeDetail varchar(255),
+        logTime datetime default(current_time)
+        )`,
+    )
+
     await db.query(`INSERT IGNORE INTO user (userId,point) values ("3ede0ef2-92b7-4817-a5f3-0c575361f745",0)`)
     await db.query(`INSERT IGNORE INTO place (placeId) values ("2e4baf1c-5acb-4efb-a1af-eddada31b00f")`)
 

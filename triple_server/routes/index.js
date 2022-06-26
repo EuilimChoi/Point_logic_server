@@ -12,7 +12,7 @@ router.post('/events',function(req, res, next) {
   postEvents(req, res)
 });
   
-router.get('/getuserpoint', function(req, res, next){
+router.get('/getuserpoint/:userId', function(req, res, next){
   getUserPoint(req, res)
 });
 
