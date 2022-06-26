@@ -12,6 +12,8 @@ router.post('/events',function(req, res, next) {
     postEvents(req, res)
   });
   
-//router.get('/aa', getUserPoint);
+router.get('/getuserpoint', function(req, res, next){
+  getUserPoint(req, res)
+});
 
 module.exports = router;

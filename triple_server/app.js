@@ -3,12 +3,8 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const db = require('./database/config')
-const mysql = require('mysql2')
 const createDB = require('./database/createDB_Table')
-
 const index = require('./routes/index')
-
 const app = express();
 
 // view engine setup

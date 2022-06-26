@@ -1,3 +1,6 @@
-function checking (res, req){
-    res.json(req.body)
+function getUserPoint (res, req){
+    res.json("getUserPoint")
 }
+
+
+module.exports = getUserPoint
