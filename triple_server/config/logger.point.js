@@ -1,10 +1,9 @@
 const db = require("../database/config")
 const {pointCount} = require("../controllers/events");
 
-const pointLogger = async(userId, reviewId, pointChange, action, reviewInfo) =>{
-    // 기존에 있는 리뷰 아이디랑, 지금 신규 리뷰들이랑 비교하면 비교하면서 로거 만들 수 있지 않을까,,?
-    console.log("logger!!!!!!!!!!!!!!!!!!!!!!!")
+module.exports ={}
 
+const pointLogger = async(userId, reviewId, pointChange, action, reviewInfo) =>{
     const [userRows,fields] = await db.execute(
         `SELECT * from user
         WHERE userId = '${userId}'`
@@ -62,8 +61,6 @@ const pointLogger = async(userId, reviewId, pointChange, action, reviewInfo) =>{
             break;
     
     }
-
-    console.log(`INSERT INTO pointlog`)
 }
 
 module.exports = pointLogger

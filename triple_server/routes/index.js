@@ -1,7 +1,9 @@
 var express = require('express');
 var router = express.Router();
-const postEvents = require('../controllers/events')
+const {postEvents} = require('../controllers/events')
 const getUserPoint = require('../controllers/checkpoint')
+console.log(postEvents)
+
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
