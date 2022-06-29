@@ -3,29 +3,47 @@ const pointLogger = require("../config/logger.point")
 
 const postEvents = async(req, res) =>{
 	const action = req.body.action
-    switch (action){
-			case "ADD":
-				const addReviewAnswer = await addReview(req.body)
-				res.json(addReviewAnswer)
-				break;
+	console.log(action, "!!!!!!!!!!!!!!!!")
+	let answer = ""
 
-			case "MOD":
-				const modReviewAnswer = await modReview(req.body)
-				res.json(modReviewAnswer)
-				break;
+	switch (action){
+		case "ADD":
+			answer = await addReview(req.body)
+			break;
+		case "MOD":
+			answer = await modReview(req.body)
+			break;
+		case "DELETE":
+			answer = await deleteReview(req.body)
+			break;
+		default :
+			answer = "ADD,MOD,DELETE 만 사용할 수 있습니다."
+			break;
+	} 
 
-			case "DELETE":
-				const deleteReviewAnswer = await deleteReview(req.body)
-				res.json(deleteReviewAnswer)
-				break;
-			
-			default :
-				res.json("ADD,MOD,DELETE 만 사용할 수 있습니다.")
-    } 
+	switch(answer){
+		case "유효하지 않는 유저입니다.":
+			return res.status(400).json(answer)
+
+		case "이미 리뷰를 작성하셨습니다.":
+			return res.status(400).json(answer)
+
+		case "리뷰가 존재하지 않습니다.":
+			return res.status(400).json(answer)
+
+		case "게시글 작성자가 아닙니다.":
+			return res.status(400).json(answer)
+		
+		case "ADD,MOD,DELETE 만 사용할 수 있습니다.":
+			return res.status(400).json(answer)
+
+		default :
+			return res.status(200).json(answer)
+	}
 }
-
-const addReview = async(addReviewInfo) => {
-	let {userId,placeId,content,reviewId,action} = addReviewInfo
+			
+	const addReview = async(addReviewInfo, res) => {
+		let {userId,placeId,content,reviewId,action} = addReviewInfo
 
 	let attachedPhotoIds =  JSON.stringify(addReviewInfo.attachedPhotoIds)
 
@@ -80,9 +98,7 @@ const modReview = async(modReviewInfo) => {
 		await pointLogger(modReviewInfo,PointDiff,reviewRows[0])
 	}
 	
-	return `리뷰 수정 완료!`
-
-	
+	return `리뷰 수정 완료!`;
 }
 
 const deleteReview = async(deleteReviewInfo) => {
@@ -93,7 +109,7 @@ const deleteReview = async(deleteReviewInfo) => {
 		)
 	
 	if(checkValidReview(reviewRows, userId)){
-		return checkValidReview(reviewRows, userId)
+		return checkValidReview(reviewRows, userId);
 	}
 	
 	let givenPoint = reviewRows[0].givenPoint
@@ -103,7 +119,7 @@ const deleteReview = async(deleteReviewInfo) => {
 	await plusOrMinusPoint(userId, -(givenPoint))
 	await pointLogger(deleteReviewInfo,-givenPoint)
 
-	return `리뷰가 삭제되었습니다.`
+	return `리뷰가 삭제되었습니다.`;
 }
 
 const isAlreadyReviewed = async (userId,placeId) =>{
@@ -112,10 +128,11 @@ const isAlreadyReviewed = async (userId,placeId) =>{
 		where userId = '${userId}'
 		and placeId = '${placeId}'`,
 	)
+
 	if(rows.length > 0){
-		return true
+		return true;
 	}else {
-		return false
+		return false;
 	}
 }
 
@@ -125,10 +142,11 @@ const isFristReviewInplace = async (reviewId,placeId) => {
 		where placeId = '${placeId}'
 		ORDER BY addTime`,
 	)
+
 	if(reviewRows.length === 0 || reviewRows[0].reviewId === reviewId){
-		return true
+		return true;
 	} else {
-		return false
+		return false;
 	}
 }
 
@@ -141,7 +159,7 @@ const addPointRule = (rule) => {
 		case "isContent" : 
 			return 1;
 		case "noPoint" :
-			return 0
+			return 0;
 	}
 }
 
@@ -150,9 +168,9 @@ const plusOrMinusPoint = async(userId,givenpoint) => {
 		`SELECT * from user
 		WHERE userId = '${userId}'`
 	)
-	
+
 	let preUserPoint = userRows[0].point
-    
+
 	await db.query(
 		`UPDATE user SET point = ${preUserPoint}+${givenpoint}`)
 }
@@ -173,9 +191,8 @@ const pointCount = async (reviewInfo) =>{
 		totalPointInThisReview += addPointRule("noPoint" )
 
 	lengthOfReview > 0 ?
-			totalPointInThisReview += addPointRule("isContent") : 
-			totalPointInThisReview += addPointRule("noPoint" )
-        
+		totalPointInThisReview += addPointRule("isContent") : 
+		totalPointInThisReview += addPointRule("noPoint" )
 	return totalPointInThisReview
 }
 
@@ -201,12 +218,13 @@ const checkValidReview = (curReview, modUserId) =>{
 }
 
 module.exports = {
-    postEvents,
-    addReview,
-    modReview,
-    deleteReview,
-    isAlreadyReviewed,
-    isFristReviewInplace,
-    addPointRule,
-    plusOrMinusPoint,
-    pointCount}
+	postEvents,
+	addReview,
+	modReview,
+	deleteReview,
+	isAlreadyReviewed,
+	isFristReviewInplace,
+	addPointRule,
+	plusOrMinusPoint,
+	pointCount
+}

@@ -18,7 +18,7 @@ const {
 
 const pointLogger = require('../config/logger.point')
 
-const getUserPoint = require('../controllers/checkpoint')
+const getUserPoint = require('../controllers/getUserPoint')
 const createDB = require('../database/createDB_Table');
 const { Server, TableInheritance } = require('typeorm');
 const { end } = require('../database/config');

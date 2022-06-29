@@ -1,7 +1,6 @@
 const db = require("../database/config")
 
 const getUserPoint = async (req, res) => {
-    console.log(req.params)
     const [userRows,userfields] = await db.execute(
         `SELECT * from user
         where userId = '${req.params.userId}'`,
