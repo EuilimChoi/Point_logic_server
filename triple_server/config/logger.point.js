@@ -25,11 +25,11 @@ const pointLogger = async(modReviewInfo,pointChange,reviewInfo) =>{
                 )
         
             let currentReviewLength = reviewInfo.content.length
-            let currentReviewPhoto = JSON.parse(reviewInfo.attachedPhotoIds).length
-            let modReviewLength = reviewRows[0].content.length
-            let modReviewPhotoIds = JSON.parse(reviewRows[0].attachedPhotoIds).length
+            let currentReviewPhoto = reviewInfo.attachedPhotoIds.length
+            let modReviewLength = modReviewInfo.content.length
+            let modReviewPhotoIds = modReviewInfo.attachedPhotoIds.length
             let changeDetail = ""
-        
+            
             if ((currentReviewLength > 0 && modReviewLength === 0)&&(currentReviewPhoto > 0 && modReviewPhotoIds === 0)){
                 changeDetail = "MOD review, DELTE content,photo"
             } else if (currentReviewPhoto > 0 && modReviewPhotoIds === 0){

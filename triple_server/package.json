@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "nodemon ./bin/www",
-    "test": "mocha test/**.test.js --sort --exit"
+    "test": "mocha test/**.test.js --sort --exit",
+    "coverage": "nyc npm run test"
   },
   "dependencies": {
     "axios": "^0.27.2",

@@ -22,6 +22,7 @@ const getUserPoint = require('../controllers/getUserPoint')
 const createDB = require('../database/createDB_Table');
 const { Server, TableInheritance } = require('typeorm');
 const { end } = require('../database/config');
+const { log } = require('debug');
 
 const reviewInfo = {
   type: "REVIEW",
@@ -302,7 +303,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
 
       const [reviewRows,fields] = await db.execute(`SELECT * FROM review WHERE placeId = '${testReviewInfo.placeId}' and userId = '${testReviewInfo.userId}'`)
       expect(reviewRows[0].content.length).to.eql(0);
-      expect(JSON.parse(reviewRows[0].attachedPhotoIds).length).to.eql(0);
+      expect(reviewRows[0].attachedPhotoIds.length).to.eql(0);
     })
 
     it('수정된 리뷰에 따른 포인트가 다시 적립되여야 합니다.', async () => { 
@@ -495,7 +496,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           .then(async(res, err) => {
             expect(res.body).to.eql("리뷰 수정 완료!")
             expect(await checkReview()).to.eql(1)
-            expect(await checkReviewInfo()).to.eql('"["afb0cef2-851d-4a50-bb07-9cc15cbdc332"]"')
+            expect(await checkReviewInfo()).to.eql('["afb0cef2-851d-4a50-bb07-9cc15cbdc332"]')
           })
           .then(async (res, err) => {
           }
@@ -594,7 +595,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
         action: "ADD",
         reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
         content: "좋아요!",
-        attachedPhotoIds : '["e4d1a64e-a531-46de-88d0-ff0ed70c0bb8", "afb0cef2-851d-4a50-bb07-9cc15cbdc332"]',
+        attachedPhotoIds : ["e4d1a64e-a531-46de-88d0-ff0ed70c0bb8", "afb0cef2-851d-4a50-bb07-9cc15cbdc332"],
         userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
         placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
         }
@@ -606,8 +607,24 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
       expect(numOflog).to.eql(1)
       expect(pointChange).to.eql(3)
     })
-
+  //=============================================================================  
     it('리뷰가 변경될 때.', async () => { 
+      let numOflog = 0
+      let pointDiff = 0
+      let changeDetail = ""
+      
+      const checkLogRows = async () => {
+        const [logRows,fields] = await db.execute(`SELECT * FROM pointLog WHERE userId = '${reviewInfo.userId}'`) 
+        numOflog = logRows.length
+        changeDetail = logRows[numOflog-1].changeDetail
+      }
+
+      const checkPointDiff = async (modReviewInfo,reviewRows) =>{
+        let currentReviewPoint = reviewRows[0].givenPoint
+        let givenPointAfterMod = await pointCount(modReviewInfo)
+        pointDiff = givenPointAfterMod-currentReviewPoint
+      }
+
       const addReviewInfo = {
         type: "REVIEW",
         action: "ADD",
@@ -616,12 +633,11 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
         attachedPhotoIds : ["e4d1a64e-a531-46de-88d0-ff0ed70c0bb8", "afb0cef2-851d-4a50-bb07-9cc15cbdc332"],
         userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
         placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
-        }
+      }
 
       await addReview(addReviewInfo)
 
-      
-      const modReviewInfo = {
+      const modReviewInfo1 = {
         type: "REVIEW",
         action: "MOD",
         reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
@@ -633,22 +649,123 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
       
       const [reviewRows,userfields] = await db.execute(
         `SELECT * from review
-        where reviewId = '${modReviewInfo.reviewId}'`
+        where reviewId = '${modReviewInfo1.reviewId}'`
       )
 
-      let currentReviewPoint = reviewRows[0].givenPoint
-      let givenPointAfterMod = await pointCount(modReviewInfo)
-      let PointDiff = givenPointAfterMod-currentReviewPoint
+      await checkPointDiff(modReviewInfo1,reviewRows)
 
-
-      await pointLogger(modReviewInfo,PointDiff,reviewRows[0])
-
-      const [logRows,fields] = await db.execute(`SELECT * FROM pointLog WHERE userId = '${reviewInfo.userId}'`) 
-      let numOflog = logRows.length
-      let pointChange = logRows[0].pointChange
+      await pointLogger(modReviewInfo1,pointDiff,reviewRows[0])
+      
+      await checkLogRows()
 
       expect(numOflog).to.eql(2)
-      expect(PointDiff).to.eql(-1)
+      expect(pointDiff).to.eql(-1)
+      expect(changeDetail).to.eql("MOD review, DELETE content")
+      //=======
+
+      const modReviewInfo2 = {
+        type: "REVIEW",
+        action: "MOD",
+        reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
+        content: "좋아요!",
+        attachedPhotoIds : "",
+        userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
+        placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
+      }
+
+      await checkPointDiff(modReviewInfo2,reviewRows)
+
+      await pointLogger(modReviewInfo2,pointDiff,reviewRows[0])
+
+      await checkLogRows()
+
+      expect(numOflog).to.eql(3)
+      expect(pointDiff).to.eql(-1)
+      expect(changeDetail).to.eql("MOD review, DELETE photo")
+
+      const modReviewInfo3 = {
+        type: "REVIEW",
+        action: "MOD",
+        reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
+        content: "",
+        attachedPhotoIds : "",
+        userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
+        placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
+      }
+
+      await checkPointDiff(modReviewInfo3,reviewRows)
+      await pointLogger(modReviewInfo3,pointDiff,reviewRows[0])
+
+      await checkLogRows()
+
+      expect(numOflog).to.eql(4)
+      expect(pointDiff).to.eql(-2)
+      expect(changeDetail).to.eql("MOD review, DELTE content,photo")
+
+      await db.execute(`UPDATE review SET content = "", attachedPhotoIds = "", givenPoint = 1`)
+
+      const modReviewInfo4 = {
+        type: "REVIEW",
+        action: "MOD",
+        reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
+        content: "콘텐츠 추가",
+        attachedPhotoIds : "",
+        userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
+        placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
+      }
+
+      const [reviewRows2,userfields2] = await db.execute(
+        `SELECT * from review
+        where reviewId = '${addReviewInfo.reviewId}'`
+      )
+
+      await checkPointDiff(modReviewInfo4,reviewRows2)
+      await pointLogger(modReviewInfo4,pointDiff,reviewRows2[0])
+      await checkLogRows()
+      
+      
+      expect(numOflog).to.eql(5)
+      expect(pointDiff).to.eql(1)
+      expect(changeDetail).to.eql("MOD review, ADD content")
+
+
+      const modReviewInfo5 = {
+        type: "REVIEW",
+        action: "MOD",
+        reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
+        content: "",
+        attachedPhotoIds : "사진 추가",
+        userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
+        placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
+      }
+
+      await checkPointDiff(modReviewInfo5,reviewRows2)
+      await pointLogger(modReviewInfo5,pointDiff,reviewRows2[0])
+      await checkLogRows()
+      
+      
+      expect(numOflog).to.eql(6)
+      expect(pointDiff).to.eql(1)
+      expect(changeDetail).to.eql("MOD review, ADD photo")
+
+      const modReviewInfo6 = {
+        type: "REVIEW",
+        action: "MOD",
+        reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
+        content: "콘텐츠 추가",
+        attachedPhotoIds : "사진 추가!!!!!!!!!!!",
+        userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
+        placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
+      }
+
+      await checkPointDiff(modReviewInfo6,reviewRows2)
+      await pointLogger(modReviewInfo6,pointDiff,reviewRows2[0])
+      await checkLogRows()
+      
+      
+      expect(numOflog).to.eql(7)
+      expect(pointDiff).to.eql(2)
+      expect(changeDetail).to.eql("MOD review , ADD content,photo")
     })
 
     it('리뷰가 삭제될 때.', async () => { 
@@ -699,6 +816,16 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           .catch(done)
     })
 
+    it('GET /getuserpoint/:userId 로 유저 포인트를 조회 합니다.', (done) => { 
+      chai.request(app)
+          .get('/getuserpoint/notexistsuser')
+          .then(async(res, err) => {
+            expect(res.body).to.eql('유저가 존재하지 않습니다.')
+          })
+          .then(done)
+          .catch(done)
+    })
+
     after(async () => {
       await db.execute(`UPDATE user SET point = 0`)
     })
@@ -711,5 +838,5 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
 
     console.log('\n' + '='.repeat(80))
   })
-  
 })
+  

@@ -3,7 +3,6 @@ const pointLogger = require("../config/logger.point")
 
 const postEvents = async(req, res) =>{
 	const action = req.body.action
-	console.log(action, "!!!!!!!!!!!!!!!!")
 	let answer = ""
 
 	switch (action){
@@ -41,11 +40,11 @@ const postEvents = async(req, res) =>{
 			return res.status(200).json(answer)
 	}
 }
-			
-	const addReview = async(addReviewInfo, res) => {
-		let {userId,placeId,content,reviewId,action} = addReviewInfo
 
-	let attachedPhotoIds =  JSON.stringify(addReviewInfo.attachedPhotoIds)
+	const addReview = async(addReviewInfo) => {
+	let {userId,placeId,content,reviewId} = addReviewInfo
+	let attachedPhotoIds = addReviewInfo.attachedPhotoIds
+
 
 	if(await checkValidUser(userId) === false){
 		return "유효하지 않는 유저입니다."
@@ -69,8 +68,10 @@ const postEvents = async(req, res) =>{
 }
 
 const modReview = async(modReviewInfo) => {
-	let {userId,placeId,content,reviewId,action} = modReviewInfo
-	let attachedPhotoIds =  JSON.stringify(modReviewInfo.attachedPhotoIds)
+	let {userId,placeId,content,reviewId} = modReviewInfo
+	let attachedPhotoIds = (modReviewInfo.attachedPhotoIds)
+	console.log(attachedPhotoIds)
+
 
 	const [reviewRows,userfields] = await db.execute(
 		`SELECT * from review
@@ -128,12 +129,9 @@ const isAlreadyReviewed = async (userId,placeId) =>{
 		where userId = '${userId}'
 		and placeId = '${placeId}'`,
 	)
+	
+	return rows.length > 0? true : false
 
-	if(rows.length > 0){
-		return true;
-	}else {
-		return false;
-	}
 }
 
 const isFristReviewInplace = async (reviewId,placeId) => {
@@ -143,11 +141,8 @@ const isFristReviewInplace = async (reviewId,placeId) => {
 		ORDER BY addTime`,
 	)
 
-	if(reviewRows.length === 0 || reviewRows[0].reviewId === reviewId){
-		return true;
-	} else {
-		return false;
-	}
+	return reviewRows.length === 0 || reviewRows[0].reviewId === reviewId ? true : false
+
 }
 
 const addPointRule = (rule) => {
