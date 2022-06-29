@@ -6,9 +6,7 @@ const getUserPoint = async (req, res) => {
         `SELECT * from user
         where userId = '${req.params.userId}'`,
         )
-    
-    console.log(userRows[0])
-    
+
     if(userRows.length > 0){
         res.json({
             userId : req.params.userId,
@@ -17,8 +15,6 @@ const getUserPoint = async (req, res) => {
     }else{
         res.json('유저가 존재하지 않습니다.')
     }
-
 }
-
 
 module.exports = getUserPoint

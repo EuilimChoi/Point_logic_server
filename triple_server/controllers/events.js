@@ -24,80 +24,86 @@ const postEvents = async(req, res) =>{
     } 
 }
 
-const addReview = async(reviewInfo) => {
-	let {userId,placeId,content,reviewId,action} = reviewInfo
-	let attachedPhotoIds =  JSON.stringify(reviewInfo.attachedPhotoIds)
-	
-	if (await isAlreadyReviewed(userId, placeId) === false) {
-		let givenPoint = await pointCount(reviewInfo)
-		await db.execute(
-			`INSERT INTO review (reviewId, content, userId, placeId, attachedPhotoIds, givenPoint)
-			VALUES ("${reviewId}","${content}", "${userId}","${placeId}",'${attachedPhotoIds}', ${givenPoint})`
-		)
-		await plusOrMinusPoint(userId,givenPoint)
-		await pointLogger(userId,reviewId,givenPoint,action)
-		return "리뷰 작성 완료!"
+const addReview = async(addReviewInfo) => {
+	let {userId,placeId,content,reviewId,action} = addReviewInfo
 
-	}else {
+	let attachedPhotoIds =  JSON.stringify(addReviewInfo.attachedPhotoIds)
+
+	if(await checkValidUser(userId) === false){
+		return "유효하지 않는 유저입니다."
+	}
+
+	if (await isAlreadyReviewed(userId, placeId) === true) {
 		return "이미 리뷰를 작성하셨습니다."
 	}
+	
+	let givenPoint = await pointCount(addReviewInfo)
+
+	await db.execute(
+		`INSERT INTO review (reviewId, content, userId, placeId, attachedPhotoIds, givenPoint)
+		VALUES ("${reviewId}","${content}", "${userId}","${placeId}",'${attachedPhotoIds}', ${givenPoint})`
+	)
+	
+	await plusOrMinusPoint(userId,givenPoint)
+	await pointLogger(addReviewInfo,givenPoint)
+
+	return "리뷰 작성 완료!"
 }
 
-const modReview = async(reviewInfo) => {
-	let {userId,placeId,content,reviewId,action} = reviewInfo
-	let attachedPhotoIds =  JSON.stringify(reviewInfo.attachedPhotoIds)
+const modReview = async(modReviewInfo) => {
+	let {userId,placeId,content,reviewId,action} = modReviewInfo
+	let attachedPhotoIds =  JSON.stringify(modReviewInfo.attachedPhotoIds)
 
 	const [reviewRows,userfields] = await db.execute(
 		`SELECT * from review
 		where reviewId = '${reviewId}'`
 	)
-	
+
+	if(checkValidReview(reviewRows, userId)){
+		return checkValidReview(reviewRows, userId)
+	}
+
 	let currentReviewPoint = reviewRows[0].givenPoint
-	let givenPointAfterMod = await pointCount(reviewInfo)
+	let givenPointAfterMod = await pointCount(modReviewInfo)
 	let PointDiff = givenPointAfterMod-currentReviewPoint
 
-	if(reviewRows.length > 0){
-		await db.execute(
-			`UPDATE review 
-			SET content = '${content}', attachedPhotoIds='${attachedPhotoIds}',givenPoint=${givenPointAfterMod}
-			WHERE reviewId = '${reviewId}'`
-		)
+	await db.execute(
+		`UPDATE review 
+		SET content = '${content}', attachedPhotoIds='${attachedPhotoIds}',givenPoint=${givenPointAfterMod}
+		WHERE reviewId = '${reviewId}'`
+	)
 
-		await isFristReviewInplace(placeId)
-		await plusOrMinusPoint(userId,PointDiff)
+	await isFristReviewInplace(placeId)
+	await plusOrMinusPoint(userId,PointDiff)
 
-		if (PointDiff != 0){
-			await pointLogger(userId,reviewId,PointDiff,action,reviewRows[0])
-		}
-
-		return `리뷰 수정 완료!`
-
-	}else{
-		return `해당 리뷰가 존재하지 않습니다!`
+	if (PointDiff != 0){
+		await pointLogger(modReviewInfo,PointDiff,reviewRows[0])
 	}
+	
+	return `리뷰 수정 완료!`
+
+	
 }
 
-const deleteReview = async(reviewInfo) => {
-	let reviewId = reviewInfo.reviewId
-	let userId = reviewInfo.userId
+const deleteReview = async(deleteReviewInfo) => {
+	const {reviewId,userId} = deleteReviewInfo
 	const [reviewRows,userfields] = await db.execute(
-		`SELECT givenPoint from review
+		`SELECT * from review
 		where reviewId = '${reviewId}'`,
 		)
 	
-	if(reviewRows.length > 0) {
-		let givenPoint = reviewRows[0].givenPoint
-		await db.execute(
-			`DELETE FROM review WHERE reviewId = "${reviewId}"`,
-		)
-		await plusOrMinusPoint(userId, -(givenPoint))
-		await pointLogger(userId,reviewId, -givenPoint,"DELETE",reviewInfo)
-
-		return `리뷰가 삭제되었습니다.`
-
-	}else{
-		return `해당 리뷰가 존재하지 않습니다!`
+	if(checkValidReview(reviewRows, userId)){
+		return checkValidReview(reviewRows, userId)
 	}
+	
+	let givenPoint = reviewRows[0].givenPoint
+	await db.execute(
+		`DELETE FROM review WHERE reviewId = "${reviewId}"`,
+	)
+	await plusOrMinusPoint(userId, -(givenPoint))
+	await pointLogger(deleteReviewInfo,-givenPoint)
+
+	return `리뷰가 삭제되었습니다.`
 }
 
 const isAlreadyReviewed = async (userId,placeId) =>{
@@ -172,6 +178,28 @@ const pointCount = async (reviewInfo) =>{
         
 	return totalPointInThisReview
 }
+
+const checkValidUser = async (userId) =>{
+	const [userRows,fields] = await db.execute(
+		`SELECT * from user
+		where userId = '${userId}'`,
+	)
+
+	if(userRows.length > 0){
+		return true
+	}else {
+		return false
+	}
+}
+
+const checkValidReview = (curReview, modUserId) =>{
+	if(curReview.length === 0){
+		return "리뷰가 존재하지 않습니다."
+	}else if(curReview[0].userId != modUserId){
+		return "게시글 작성자가 아닙니다."
+	}
+}
+
 module.exports = {
     postEvents,
     addReview,

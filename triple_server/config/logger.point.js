@@ -1,17 +1,14 @@
 const db = require("../database/config")
-const {pointCount} = require("../controllers/events");
 
-module.exports ={}
 
-const pointLogger = async(userId, reviewId, pointChange, action, reviewInfo) =>{
+const pointLogger = async(modReviewInfo,pointChange,reviewInfo) =>{
+    const {userId, reviewId, action} = modReviewInfo
     const [userRows,fields] = await db.execute(
         `SELECT * from user
         WHERE userId = '${userId}'`
-        )
+    )
     
     let preUserPoint = userRows[0].point
-
-
 
     switch (action) {
         case "ADD":
