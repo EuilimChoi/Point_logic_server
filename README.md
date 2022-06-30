@@ -8,12 +8,15 @@
 |mysql|8.0.29|
 
 ## 사용법
-- 본 레파지토리의 triple_server 경로에서 터미널에 npm install으로 필요한 라이브러리를 설치합니다.
-- triple_server 경로의 .env.exam 내용을 확인하시고 사용하시는 mysql의 user,password를 입력하시고 사용하실 port를 입력하세요. (port를 입력하지 않으시면 3000번을 사용하게됩니다.)
+- 본 레파지토리의 triple_server 경로에서 터미널에 npm install을 입력해 필요한 라이브러리를 설치합니다.
+- triple_server 경로의 .env.exam 내용을 확인하시고 사용하시는 mysql의 user,password를 입력하시고 사용하실 port를 입력하세요.
+  (port를 입력하지 않으시면 3000번을 사용하게 됩니다.)
 - .env.exam 파일명을 .env로 바꾸신후 npm run start로 서버를 구동할 수 있습니다.
 - 서버 구동시 미리 세팅해두었던 데이터베이스의 테이블이 세팅되며 더미 데이터 (userId, placeId)가 삽입됩니다.
-- npm run test로 testcase를 실행할 수 있습니다.
-- npm run coverage로 테스트 커버리지를 확인할 수 있습니다. 
+- npm run test로 testcase를 실행할 수 있습니다. 테스트 편의상 테스트가 실행되면 데이터 베이스가 초기 세팅 상태로 초기화 됩니다.
+  (mysql에 접속이 되어야 정상 작동합니다.)
+- npm run coverage로 테스트 커버리지를 확인할 수 있습니다.
+  (mysql에 접속이 되어야 정상 작동합니다.)
 
 ## 주의사항
 ### post /events
