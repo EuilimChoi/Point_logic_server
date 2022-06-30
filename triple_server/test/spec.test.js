@@ -819,7 +819,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
       chai.request(app)
           .get('/getuserpoint/notexistsuser')
           .then(async(res, err) => {
-            expect(res.body).to.eql('유저가 존재하지 않습니다.')
+            expect(res.body).to.deep.include({message : '유저가 존재하지 않습니다.'})
           })
           .then(done)
           .catch(done)

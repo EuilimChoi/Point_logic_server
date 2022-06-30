@@ -2,20 +2,19 @@ const db = require("../database/config")
 const pointLogger = require("../config/logger.point")
 
 const postEvents = async(req, res) =>{
-	const action = req.body.action
 	let answer = []
 
 	try {
-		for(i of req.body){
-			switch (i.action){
+		for(eachRequest of req.body){
+			switch (eachRequest.action){
 				case "ADD":
-					answer.push(await addReview(i))
+					answer.push(await addReview(eachRequest))
 					break;
 				case "MOD":
-					answer.push(await modReview(i))
+					answer.push(await modReview(eachRequest))
 					break;
 				case "DELETE":
-					answer.push(await deleteReview(i))
+					answer.push(await deleteReview(eachRequest))
 					break;
 				default :
 					answer.push({message : "ADD,MOD,DELETE 만 사용할 수 있습니다."})
@@ -117,7 +116,6 @@ const isAlreadyReviewed = async (userId,placeId) =>{
 	)
 	
 	return rows.length > 0? true : false
-
 }
 
 const isFristReviewInplace = async (reviewId,placeId) => {
@@ -128,7 +126,6 @@ const isFristReviewInplace = async (reviewId,placeId) => {
 	)
 
 	return reviewRows.length === 0 || reviewRows[0].reviewId === reviewId ? true : false
-
 }
 
 const addPointRule = (rule) => {
