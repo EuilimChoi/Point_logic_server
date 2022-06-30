@@ -21,7 +21,7 @@
 ## 주의사항
 ### post /events
 - 단체/개인의 포인트 정보를 다루기 위해 post 요청을 배열로 감싼 후 post 요청을 진행하도록 제작했습니다.
-  post body sample for multiple request :
+  - post body sample for multiple request :
   ```javascript
     [{
   "type": "REVIEW",
@@ -50,7 +50,7 @@
   }]
   ```
   
-  post body sample for single request :
+  - post body sample for single request :
   ```javascript
     [{
   "type": "REVIEW",
@@ -63,9 +63,9 @@
   }]
   ```
   
-  ### get /getuserpoint/:userId
-  - 조회하고 싶은 userId를 파라미터로 get요청을 보내시면 해당하는 결과를 확인하실 수 있습니다.
-    URL sample : 
+### get /getuserpoint/:userId
+- 조회하고 싶은 userId를 파라미터로 get요청을 보내시면 해당하는 결과를 확인하실 수 있습니다.
+  - URL sample : 
     ```javascript
     http://localhost:3000/getuserpoint/3ede0ef2-92b7-4817-a5f3-0c575361f745
     ```
