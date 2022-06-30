@@ -70,8 +70,6 @@ const postEvents = async(req, res) =>{
 const modReview = async(modReviewInfo) => {
 	let {userId,placeId,content,reviewId} = modReviewInfo
 	let attachedPhotoIds = (modReviewInfo.attachedPhotoIds)
-	console.log(attachedPhotoIds)
-
 
 	const [reviewRows,userfields] = await db.execute(
 		`SELECT * from review
@@ -167,7 +165,7 @@ const plusOrMinusPoint = async(userId,givenpoint) => {
 	let preUserPoint = userRows[0].point
 
 	await db.query(
-		`UPDATE user SET point = ${preUserPoint}+${givenpoint}`)
+		`UPDATE user SET point = ${preUserPoint}+${givenpoint} where userId = '${userId}'`)
 }
 
 const pointCount = async (reviewInfo) =>{

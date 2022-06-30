@@ -7,12 +7,12 @@ const getUserPoint = async (req, res) => {
         )
 
     if(userRows.length > 0){
-        res.json({
+        res.status(200).json({
             userId : req.params.userId,
             point : userRows[0].point
             })
     }else{
-        res.json('유저가 존재하지 않습니다.')
+        res.status(400).json('유저가 존재하지 않습니다.')
     }
 }
 
