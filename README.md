@@ -1,4 +1,8 @@
 # backend homework info
+
+## 프로그래밍 언어
+- JavaScript
+
 ## 사용 라이브러리 버전
 |name|version|
 |----|-------|
