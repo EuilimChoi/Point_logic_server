@@ -21,10 +21,10 @@ const postEvents = async(req, res) =>{
 					break;
 			} 
 		}
-	
 		res.status(200).json(answer)
-	}catch{
+	}catch(err){
 		res.status(400).json({message : "server ERR"})
+		console.log(err)
 	}
 }
 
