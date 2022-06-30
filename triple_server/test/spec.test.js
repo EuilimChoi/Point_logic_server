@@ -263,7 +263,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
 
   describe('리뷰를 추가하고 포인트가 제대로 쌓이는지를 테스트 합니다. addReview 함수를 테스트 합니다.', async () => {
       it('신규 리뷰가 잘 등록되야 합니다.', async () => { 
-        expect(await addReview(reviewInfo)).to.eql("리뷰 작성 완료!");
+        expect(await addReview(reviewInfo)).to.deep.include({message : "리뷰 작성 완료!"});
         const [reviewRows, fields] = await db.execute(`SELECT * FROM review WHERE reviewId = '${reviewInfo.reviewId}'`)
         expect(reviewRows.length).to.eql(1);
       })
@@ -274,7 +274,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
       })
 
       it('같은 지역에 같은 유저가 다시 리뷰를 남길 수 없어야 합니다.', async () => { 
-        expect(await addReview(reviewInfo)).to.eql("이미 리뷰를 작성하셨습니다.");
+        expect(await addReview(reviewInfo)).to.deep.include({message : "이미 리뷰를 작성하셨습니다."});
         const [reviewRows, fields] = await db.execute(`SELECT * FROM review WHERE placeId = '${reviewInfo.placeId}' and userId = '${reviewInfo.userId}'`)
         expect(reviewRows.length).to.eql(1);
       })
@@ -298,8 +298,8 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
         placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
       }
 
-      expect(await addReview(reviewInfo)).to.eql("리뷰 작성 완료!");
-      expect(await modReview(testReviewInfo)).to.eql("리뷰 수정 완료!");
+      expect(await addReview(reviewInfo)).to.deep.include({message : "리뷰 작성 완료!"});
+      expect(await modReview(testReviewInfo)).to.deep.include({message : "리뷰 수정 완료!"});
 
       const [reviewRows,fields] = await db.execute(`SELECT * FROM review WHERE placeId = '${testReviewInfo.placeId}' and userId = '${testReviewInfo.userId}'`)
       expect(reviewRows[0].content.length).to.eql(0);
@@ -321,9 +321,9 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
         userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
         placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
       }
-      expect(await addReview(reviewInfo)).to.eql("리뷰 작성 완료!");
+      expect(await addReview(reviewInfo)).to.deep.include({message : "리뷰 작성 완료!"});
       const [reviewRows,fields] = await db.execute(`SELECT * FROM review WHERE placeId = '${reviewInfo.placeId}' and userId = '${reviewInfo.userId}'`)
-      expect(await modReview(testReviewInfo)).to.eql("리뷰 수정 완료!");
+      expect(await modReview(testReviewInfo)).to.deep.include({message : "리뷰 수정 완료!"});
       const [modreviewRows,modfields] = await db.execute(`SELECT * FROM review WHERE placeId = '${testReviewInfo.placeId}' and userId = '${testReviewInfo.userId}'`)
       expect([reviewRows[0].givenPoint, modreviewRows[0].givenPoint]).to.eql([3,1]);
     })
@@ -338,16 +338,16 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
   //=============================================================
   describe('리뷰를 삭제하고 포인트가 제대로 회수 되는지를 테스트 합니다. deleteReview 함수를 테스트 합니다.', async () => {
     it('리뷰가 잘 삭제되어야 합니다.', async () => { 
-      expect(await addReview(reviewInfo)).to.eql("리뷰 작성 완료!");
-      expect(await deleteReview(reviewInfo)).to.eql("리뷰가 삭제되었습니다.");
+      expect(await addReview(reviewInfo)).to.deep.include({message : "리뷰 작성 완료!"});
+      expect(await deleteReview(reviewInfo)).to.deep.include({message : "리뷰가 삭제되었습니다."});
       const [reviewRows,fields] = await db.execute(`SELECT * FROM review WHERE placeId = '${reviewInfo.placeId}' and userId = '${reviewInfo.userId}'`)
       expect(reviewRows.length).to.eql(0);
     })
 
     it('리뷰가 삭제되면 포인트를 회수해야합니다.', async () => { 
-      expect(await addReview(reviewInfo)).to.eql("리뷰 작성 완료!");
+      expect(await addReview(reviewInfo)).to.deep.include({message : "리뷰 작성 완료!"});
       const [userRows,fields] = await db.execute(`SELECT * FROM user WHERE userId = '${reviewInfo.userId}'`)
-      expect(await deleteReview(reviewInfo)).to.eql("리뷰가 삭제되었습니다.");
+      expect(await deleteReview(reviewInfo)).to.deep.include({message : "리뷰가 삭제되었습니다."});
       const [afterDelRows,afterDelfields] = await db.execute(`SELECT * FROM user WHERE userId = '${reviewInfo.userId}'`)
       expect([userRows[0].point,afterDelRows[0].point]).to.eql([3,0])
     })
@@ -367,7 +367,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
     }
     describe('ADD action을 테스트 합니다.', async () =>{
       it('ADD 요청을 보내 리뷰와 포인트가 추가되는지 확인합니다.' , (done) => { 
-        const AddTestReviewInfo = {
+        const AddTestReviewInfo = [{
           type: "REVIEW",
           action: "ADD",
           reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
@@ -375,13 +375,13 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           attachedPhotoIds : '["e4d1a64e-a531-46de-88d0-ff0ed70c0bb8", "afb0cef2-851d-4a50-bb07-9cc15cbdc332"]',
           userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
           placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
-        }
+        }]
 
         chai.request(app)
           .post('/events')
           .send(AddTestReviewInfo)
           .then(async(res, err) => {
-            expect(res.body).to.eql("리뷰 작성 완료!")
+            expect(res.body[0]).to.deep.include({message : "리뷰 작성 완료!"})
             expect(await checkReview()).to.eql(1)
           })
           .then(done)
@@ -390,7 +390,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
 
       it('같은 지역에 같은 유저가 리뷰를 작성할 수 없습니다.' , (done) => { 
   
-        const AddTestReviewInfo = {
+        const AddTestReviewInfo = [{
           type: "REVIEW",
           action: "ADD",
           reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
@@ -398,13 +398,13 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           attachedPhotoIds : '["e4d1a64e-a531-46de-88d0-ff0ed70c0bb8", "afb0cef2-851d-4a50-bb07-9cc15cbdc332"]',
           userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
           placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
-        }
+        }]
 
         chai.request(app)
           .post('/events')
           .send(AddTestReviewInfo)
           .then(async(res, err) => {
-            expect(res.body).to.eql("이미 리뷰를 작성하셨습니다.")
+            expect(res.body[0]).to.deep.include({message:"이미 리뷰를 작성하셨습니다."})
             expect(await checkReview()).to.eql(1)
           })
           .then(done)
@@ -415,7 +415,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
       it('유효하지 않은 유저 (user 테이블에 존재하지 않는 유저)가 리뷰를 추가할 수 없습니다.' , (done) => { 
  
 
-        const AddTestReviewInfo = {
+        const AddTestReviewInfo = [{
           type: "REVIEW",
           action: "ADD",
           reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
@@ -423,13 +423,13 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           attachedPhotoIds : '["e4d1a64e-a531-46de-88d0-ff0ed70c0bb8", "afb0cef2-851d-4a50-bb07-9cc15cbdc332"]',
           userId: "유효하지 않는 유저",
           placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
-        }
+        }]
 
         chai.request(app)
           .post('/events')
           .send(AddTestReviewInfo)
           .then(async(res, err) => {
-            expect(res.body).to.eql("유효하지 않는 유저입니다.")
+            expect(res.body[0]).to.deep.include({message:"유효하지 않는 유저입니다."})
             expect(await checkReview()).to.eql(1)
           })
           .then(done)
@@ -440,8 +440,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
     describe('MOD action을 테스트 합니다.', async () =>{
       it('MOD 요청으로 Content가 수정되는지 테스트 합니다.' , (done) => { 
  
-
-        const modTestReviewInfo1 = {
+        const modTestReviewInfo1 = [{
           type: "REVIEW",
           action: "MOD",
           reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
@@ -449,7 +448,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           attachedPhotoIds : '["e4d1a64e-a531-46de-88d0-ff0ed70c0bb8", "afb0cef2-851d-4a50-bb07-9cc15cbdc332"]',
           userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
           placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
-        }
+        }]
 
         const checkReviewInfo = async () => {
           const [reviewRows,userfields] = await db.execute(
@@ -462,7 +461,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           .post('/events')
           .send(modTestReviewInfo1)
           .then(async(res, err) => {
-            expect(res.body).to.eql("리뷰 수정 완료!")
+            expect(res.body[0]).to.deep.include({message:"리뷰 수정 완료!"})
             expect(await checkReview()).to.eql(1)
             expect(await checkReviewInfo()).to.eql("새로운 콘텐츠!")
           })
@@ -473,7 +472,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
       it('MOD 요청으로 attachedPhotoIds가 수정되는지 테스트 합니다.' , (done) => { 
  
 
-        const modTestReviewInfo1 = {
+        const modTestReviewInfo1 = [{
           type: "REVIEW",
           action: "MOD",
           reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
@@ -481,7 +480,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           attachedPhotoIds : '["afb0cef2-851d-4a50-bb07-9cc15cbdc332"]',
           userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
           placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
-        }
+        }]
 
         const checkReviewInfo = async () => {
           const [reviewRows,userfields] = await db.execute(
@@ -494,7 +493,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           .post('/events')
           .send(modTestReviewInfo1)
           .then(async(res, err) => {
-            expect(res.body).to.eql("리뷰 수정 완료!")
+            expect(res.body[0]).to.deep.include({message:"리뷰 수정 완료!"})
             expect(await checkReview()).to.eql(1)
             expect(await checkReviewInfo()).to.eql('["afb0cef2-851d-4a50-bb07-9cc15cbdc332"]')
           })
@@ -508,7 +507,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
       it('리뷰 작성자가 아니면 리뷰를 수정 할 수 없습니다.' , (done) => { 
 
 
-        const modTestReviewInfo1 = {
+        const modTestReviewInfo1 = [{
           type: "REVIEW",
           action: "MOD",
           reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
@@ -516,13 +515,13 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           attachedPhotoIds : '["afb0cef2-851d-4a50-bb07-9cc15cbdc332"]',
           userId: "다른 유저",
           placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
-        }
+        }]
 
         chai.request(app)
           .post('/events')
           .send(modTestReviewInfo1)
           .then(async(res, err) => {
-            expect(res.body).to.eql("게시글 작성자가 아닙니다.")
+            expect(res.body[0]).to.deep.include({message:"게시글 작성자가 아닙니다."})
             expect(await checkReview()).to.eql(1)
           })
           .then(done)
@@ -532,9 +531,9 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
     })
 
     describe('DELETE action을 테스트 합니다.', async () =>{
-      it('리뷰 작성가 아니면 리뷰를 삭제할 수 없습니다.' , (done) => { 
+      it('리뷰 작성자가 아니면 리뷰를 삭제할 수 없습니다.' , (done) => { 
  
-        const modTestReviewInfo1 = {
+        const modTestReviewInfo1 = [{
           type: "REVIEW",
           action: "DELETE",
           reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
@@ -542,13 +541,13 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           attachedPhotoIds : '["e4d1a64e-a531-46de-88d0-ff0ed70c0bb8", "afb0cef2-851d-4a50-bb07-9cc15cbdc332"]',
           userId: "다른 유저",
           placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
-        }
+        }]
 
         chai.request(app)
           .post('/events')
           .send(modTestReviewInfo1)
           .then(async(res, err) => {
-            expect(res.body).to.eql("게시글 작성자가 아닙니다.")
+            expect(res.body[0]).to.deep.include({message:"게시글 작성자가 아닙니다."})
             expect(await checkReview()).to.eql(1)
           })
           .then(done)
@@ -558,7 +557,7 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
       it('리뷰가 잘 삭제되어야 합니다.' , (done) => { 
  
 
-        const modTestReviewInfo1 = {
+        const modTestReviewInfo1 = [{
           type: "REVIEW",
           action: "DELETE",
           reviewId: "240a0658-dc5f-4878-9381-ebb7b2667773",
@@ -566,13 +565,13 @@ describe('🚀 각 함수들을 테스트 합니다.', async() => {
           attachedPhotoIds : '["e4d1a64e-a531-46de-88d0-ff0ed70c0bb8", "afb0cef2-851d-4a50-bb07-9cc15cbdc332"]',
           userId: "3ede0ef2-92b7-4817-a5f3-0c575361f745",
           placeId: "2e4baf1c-5acb-4efb-a1af-eddada31b00g"
-        }
+        }]
 
         chai.request(app)
           .post('/events')
           .send(modTestReviewInfo1)
           .then(async(res, err) => {
-            expect(res.body).to.eql("리뷰가 삭제되었습니다.")
+            expect(res.body[0]).to.deep.include({message:"리뷰가 삭제되었습니다."})
             expect(await checkReview()).to.eql(0)
           })
           .then(done)

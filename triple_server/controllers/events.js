@@ -3,41 +3,29 @@ const pointLogger = require("../config/logger.point")
 
 const postEvents = async(req, res) =>{
 	const action = req.body.action
-	let answer = ""
+	let answer = []
 
-	switch (action){
-		case "ADD":
-			answer = await addReview(req.body)
-			break;
-		case "MOD":
-			answer = await modReview(req.body)
-			break;
-		case "DELETE":
-			answer = await deleteReview(req.body)
-			break;
-		default :
-			answer = "ADD,MOD,DELETE 만 사용할 수 있습니다."
-			break;
-	} 
-
-	switch(answer){
-		case "유효하지 않는 유저입니다.":
-			return res.status(400).json(answer)
-
-		case "이미 리뷰를 작성하셨습니다.":
-			return res.status(400).json(answer)
-
-		case "리뷰가 존재하지 않습니다.":
-			return res.status(400).json(answer)
-
-		case "게시글 작성자가 아닙니다.":
-			return res.status(400).json(answer)
-		
-		case "ADD,MOD,DELETE 만 사용할 수 있습니다.":
-			return res.status(400).json(answer)
-
-		default :
-			return res.status(200).json(answer)
+	try {
+		for(i of req.body){
+			switch (i.action){
+				case "ADD":
+					answer.push(await addReview(i))
+					break;
+				case "MOD":
+					answer.push(await modReview(i))
+					break;
+				case "DELETE":
+					answer.push(await deleteReview(i))
+					break;
+				default :
+					answer.push({message : "ADD,MOD,DELETE 만 사용할 수 있습니다."})
+					break;
+			} 
+		}
+	
+		res.status(200).json(answer)
+	}catch{
+		res.status(400).json({message : "server ERR"})
 	}
 }
 
@@ -47,11 +35,11 @@ const postEvents = async(req, res) =>{
 
 
 	if(await checkValidUser(userId) === false){
-		return "유효하지 않는 유저입니다."
+		return {message : "유효하지 않는 유저입니다.", reviewId : reviewId, userId : userId}
 	}
 
 	if (await isAlreadyReviewed(userId, placeId) === true) {
-		return "이미 리뷰를 작성하셨습니다."
+		return {message : "이미 리뷰를 작성하셨습니다.",reviewId : reviewId, userId : userId}
 	}
 	
 	let givenPoint = await pointCount(addReviewInfo)
@@ -64,7 +52,7 @@ const postEvents = async(req, res) =>{
 	await plusOrMinusPoint(userId,givenPoint)
 	await pointLogger(addReviewInfo,givenPoint)
 
-	return "리뷰 작성 완료!"
+	return {message : "리뷰 작성 완료!" , reviewId : reviewId, userId : userId}
 }
 
 const modReview = async(modReviewInfo) => {
@@ -97,7 +85,7 @@ const modReview = async(modReviewInfo) => {
 		await pointLogger(modReviewInfo,PointDiff,reviewRows[0])
 	}
 	
-	return `리뷰 수정 완료!`;
+	return {message : `리뷰 수정 완료!`,reviewId : reviewId, userId : userId};
 }
 
 const deleteReview = async(deleteReviewInfo) => {
@@ -107,8 +95,8 @@ const deleteReview = async(deleteReviewInfo) => {
 		where reviewId = '${reviewId}'`,
 		)
 	
-	if(checkValidReview(reviewRows, userId)){
-		return checkValidReview(reviewRows, userId);
+	if(checkValidReview(reviewRows, userId, reviewId)){
+		return checkValidReview(reviewRows, userId, reviewId);
 	}
 	
 	let givenPoint = reviewRows[0].givenPoint
@@ -118,7 +106,7 @@ const deleteReview = async(deleteReviewInfo) => {
 	await plusOrMinusPoint(userId, -(givenPoint))
 	await pointLogger(deleteReviewInfo,-givenPoint)
 
-	return `리뷰가 삭제되었습니다.`;
+	return {message : `리뷰가 삭제되었습니다.`,reviewId : reviewId, userId : userId};
 }
 
 const isAlreadyReviewed = async (userId,placeId) =>{
@@ -202,11 +190,11 @@ const checkValidUser = async (userId) =>{
 	}
 }
 
-const checkValidReview = (curReview, modUserId) =>{
+const checkValidReview = (curReview, modUserId, reviewId) =>{
 	if(curReview.length === 0){
-		return "리뷰가 존재하지 않습니다."
+		return {message : "리뷰가 존재하지 않습니다.",reviewId : reviewId, userId : modUserId}
 	}else if(curReview[0].userId != modUserId){
-		return "게시글 작성자가 아닙니다."
+		return {message : "게시글 작성자가 아닙니다.",reviewId : reviewId, userId : modUserId}
 	}
 }
 
