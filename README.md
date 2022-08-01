@@ -1,5 +1,3 @@
-# backend homework info
-
 ## 프로그래밍 언어
 - JavaScript
 
